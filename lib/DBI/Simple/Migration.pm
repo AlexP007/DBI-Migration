@@ -7,7 +7,6 @@ use warnings;
 use feature 'say';
 
 use Exporter 'import';
-use Data::Dumper;
 
 use Moo;
 use File::Slurper 'read_text';
@@ -43,10 +42,10 @@ sub init {
     my @sql = <DATA>;
     my $sql = join '', @sql;
 
-    my $sth     = $self->dbh->table_info('%', '%', 'applied_migrations', 'TABLE');
-    my $arr_ref = $sth->fetchall_arrayref;
+    my $sth = $self->dbh->table_info('%', '%', 'applied_migrations', 'TABLE');
+    my @row = $sth->fetchrow_array;
 
-    unless (@$arr_ref) {
+    unless (@row) {
         $self->dbh->do($sql) or die $self->dbh->errstr;
 
         say "Table applied_migrations successfully created";
@@ -61,16 +60,19 @@ sub run {
     my ($self, $num) = @_;
 
     $num = $num || 1;
+    my $completed = 0;
+
     $self->dbh->{AutoCommit} = 0;
 
     my $dir  = $self->_detect_dir; 
-    my @dirs = $self->_dir_listing($dir);
+    my @dirs = sort $self->_dir_listing($dir);
 
-    my $completed = 0;
     for (@dirs) {
+        last unless $num;
         unless ($self->_is_migration_applied($_) ) {
             $self->_run_migration($dir, $_, UP);
             $completed++;
+            $num--;
        }
     }
 
@@ -87,9 +89,31 @@ sub run {
 sub rollback {
     my ($self, $num) = @_;
 
-    my $dir = $self->_detect_dir;
+    $num = $num || 1;
+    my $completed = 0;
 
-    return;
+    $self->dbh->{AutoCommit} = 0;
+
+    my $dir  = $self->_detect_dir; 
+    my @dirs = sort { $b cmp $a } $self->_dir_listing($dir);
+
+    for (@dirs) {
+        last unless $num;
+        if ($self->_is_migration_applied($_) ) {
+            $self->_run_migration($dir, $_, DOWN);
+            $completed++;
+            $num--;
+       }
+    }
+
+    my $rows = $self->dbh->commit;
+    die "Could't rollback migrations" if $rows < 0;
+
+    $self->dbh->{AutoCommit} = 1;
+
+    say "Rollback migrations:$completed complete";
+
+    return 1;
 }
 
 sub _detect_dir {
@@ -109,7 +133,7 @@ sub _dir_listing {
     my @dirs = readdir $dh;
     closedir $dh;
 
-    return sort grep !/^\.|\.\.$/, @dirs;
+    return grep !/^\.|\.\.$/, @dirs;
 }
 
 sub _is_migration_applied {
@@ -133,7 +157,13 @@ sub _run_migration {
 
     die $self->db->errstr if $rows < 0;
 
-    $self->_save_migration($migration);
+    if ($type eq UP) {
+        $self->_save_migration($migration);
+    }
+
+    else {
+        $self->_delete_migration($migration);
+    }
 
     return 1;
 }
@@ -142,6 +172,16 @@ sub _save_migration {
     my ($self, $migration) = @_;
 
     my $sql = 'INSERT INTO applied_migrations VALUES(?)';
+    my $sth = $self->dbh->prepare($sql) or die $self->dbh->errstr;
+    my $rv  = $sth->execute($migration);
+
+    return $rv ne '0E0';
+}
+
+sub _delete_migration {
+    my ($self, $migration) = @_;
+
+    my $sql = 'DELETE FROM applied_migrations WHERE migration = ?';
     my $sth = $self->dbh->prepare($sql) or die $self->dbh->errstr;
     my $rv  = $sth->execute($migration);
 
