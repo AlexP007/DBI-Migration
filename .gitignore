@@ -1,0 +1,8 @@
+.DS_Store
+.idea
+.env
+.vscode
+.build
+db_test.pl
+test.db
+/db
