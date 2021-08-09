@@ -32,10 +32,6 @@ has [qw(dir name)] => (
     required => 1,
 );
 
-has schema => (
-    is       => 'ro',
-);
-
 sub init {
     my ($self) = @_;
 
@@ -160,7 +156,6 @@ sub _run_migration {
     if ($type eq UP) {
         $self->_save_migration($migration);
     }
-
     else {
         $self->_delete_migration($migration);
     }
