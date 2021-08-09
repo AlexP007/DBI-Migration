@@ -1,4 +1,4 @@
-package DBI::Simple::Migration;
+package DBI::Migration;
 
 use 5.24.0;
 
@@ -9,7 +9,7 @@ use feature 'say';
 use Exporter 'import';
 
 use Moo;
-use Term::ANSIColor;
+use Term::ANSIColor 'colored';
 use File::Slurper 'read_text';
 use Scalar::Util 'blessed';
 
@@ -24,7 +24,7 @@ has dbh => (
     is       => 'ro',
     requires => 1,
     isa      => sub {
-        die red("$_[0] is not DBI::db") unless blessed $_[0] and $_[0]->isa('DBI::db');
+        say colored("$_[0] is not DBI::db", 'red') and exit unless blessed $_[0] and $_[0]->isa('DBI::db');
     },
 );
 
@@ -40,12 +40,12 @@ sub init {
     my $sql = join '', @sql;
 
     if ($self->_is_applied_migrations_table_exists() ) {
-        say yellow("Table applied_migrations already exists");
+        say colored("Table applied_migrations already exists", 'yellow');
         return 1;
     } else {
-        $self->dbh->do($sql) or die $self->dbh->errstr;
+        $self->dbh->do($sql) or say colored($self->dbh->errstr, 'red') and exit;
 
-        say green("Table applied_migrations successfully created");
+        say colored("Table applied_migrations successfully created", 'green');
         return 1;
     }
 }
@@ -54,7 +54,8 @@ sub run {
     my ($self, $num) = @_;
 
     unless ($self->_is_applied_migrations_table_exists() ) {
-        die $self->_applied_migrations_not_exist_phrase();
+        say $self->_applied_migrations_not_exist_phrase();
+        exit;
     }
 
     $self->dbh->{AutoCommit} = 0;
@@ -75,11 +76,11 @@ sub run {
     }
 
     my $rows = $self->dbh->commit;
-    die red("Could't run migrations") if $rows < 0;
+    say colored("Could't run migrations", 'red') and exit if $rows < 0;
 
     $self->dbh->{AutoCommit} = 1;
 
-    say green("Run migrations:$completed complete");
+    say colored("Run migrations:$completed complete", 'green');
 
     return 1;
 }
@@ -88,7 +89,8 @@ sub rollback {
     my ($self, $num) = @_;
 
     unless ($self->_is_applied_migrations_table_exists() ) {
-        die $self->_applied_migrations_not_exist_phrase();
+        say $self->_applied_migrations_not_exist_phrase();
+        exit;
     }
 
     $self->dbh->{AutoCommit} = 0;
@@ -109,11 +111,11 @@ sub rollback {
     }
 
     my $rows = $self->dbh->commit;
-    die red("Could't rollback migrations") if $rows < 0;
+    say colored("Could't rollback migrations", 'red') and exit if $rows < 0;
 
     $self->dbh->{AutoCommit} = 1;
 
-    say green("Rollback migrations:$completed complete");
+    say colored("Rollback migrations:$completed complete", 'green');
 
     return 1;
 }
@@ -128,7 +130,7 @@ sub _is_applied_migrations_table_exists {
 }
 
 sub _applied_migrations_not_exist_phrase {
-    return red("Table applied_migrations does not exists. You should run init first");
+    return colored("Table applied_migrations does not exists. You should run init first", 'red');
 }
 
 sub _detect_dir {
@@ -138,13 +140,14 @@ sub _detect_dir {
     return $ENV{PWD}.$self->dir     if -d $ENV{PWD}.$self->dir;
     return $ENV{PWD}.'/'.$self->dir if -d $ENV{PWD}.'/'.$self->dir;
 
-    die red("$self->{dir} doesn't exists");
+    say colored("$self->{dir} doesn't exists", 'red');
+    exit;
 }
 
 sub _dir_listing {
     my ($self, $dir) = @_;
 
-    opendir my $dh, $dir or die red("Couldn't open dir '$dir': $!");
+    opendir my $dh, $dir or say colored("Couldn't open dir '$dir': $!", 'red') and exit;
     my @dirs = readdir $dh;
     closedir $dh;
 
@@ -155,10 +158,10 @@ sub _is_migration_applied {
     my ($self, $migration) = @_;
 
     my $sql = 'SELECT migration FROM applied_migrations WHERE migration = ?';
-    my $sth = $self->dbh->prepare($sql) or die $self->dbh->errstr;
+    my $sth = $self->dbh->prepare($sql) or say colored($self->dbh->errstr, 'red') and exit;
     my $rv  = $sth->execute($migration);
 
-    die $sth->errstr if $rv < 0;
+    say colored($sth->errstr) and exit if $rv < 0;
     
     return $sth->fetchrow_array;
 }
@@ -170,7 +173,7 @@ sub _run_migration {
     my $sql      = read_text "$dir/$migration/$filename";
     my $rows     = $self->dbh->do($sql); 
 
-    die $self->db->errstr if $rows < 0;
+    say colored($self->db->errstr, 'red') and exit if $rows < 0;
 
     if ($type eq UP) {
         $self->_save_migration($migration);
@@ -186,7 +189,7 @@ sub _save_migration {
     my ($self, $migration) = @_;
 
     my $sql = 'INSERT INTO applied_migrations VALUES(?)';
-    my $sth = $self->dbh->prepare($sql) or die $self->dbh->errstr;
+    my $sth = $self->dbh->prepare($sql) or say colored($self->dbh->errstr, 'red') and exit;
     my $rv  = $sth->execute($migration);
 
     return $rv ne '0E0';
@@ -196,7 +199,7 @@ sub _delete_migration {
     my ($self, $migration) = @_;
 
     my $sql = 'DELETE FROM applied_migrations WHERE migration = ?';
-    my $sth = $self->dbh->prepare($sql) or die $self->dbh->errstr;
+    my $sth = $self->dbh->prepare($sql) or say colored($self->dbh->errstr, 'red') and exit;
     my $rv  = $sth->execute($migration);
 
     return $rv ne '0E0';
