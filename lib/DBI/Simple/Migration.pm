@@ -9,6 +9,7 @@ use feature 'say';
 use Exporter 'import';
 
 use Moo;
+use Term::ANSIColor;
 use File::Slurper 'read_text';
 use Scalar::Util 'blessed';
 
@@ -23,7 +24,7 @@ has dbh => (
     is       => 'ro',
     requires => 1,
     isa      => sub {
-        die "$_[0] is not DBI::db" unless blessed $_[0] and $_[0]->isa('DBI::db');
+        die red("$_[0] is not DBI::db") unless blessed $_[0] and $_[0]->isa('DBI::db');
     },
 );
 
@@ -39,12 +40,12 @@ sub init {
     my $sql = join '', @sql;
 
     if ($self->_is_applied_migrations_table_exists() ) {
-        say "Table applied_migrations already exists";
+        say yellow("Table applied_migrations already exists");
         return 1;
     } else {
         $self->dbh->do($sql) or die $self->dbh->errstr;
 
-        say "Table applied_migrations successfully created";
+        say green("Table applied_migrations successfully created");
         return 1;
     }
 }
@@ -53,7 +54,7 @@ sub run {
     my ($self, $num) = @_;
 
     unless ($self->_is_applied_migrations_table_exists() ) {
-        die "Table applied_migrations does not exists. You should run init first";
+        die $self->_applied_migrations_not_exist_phrase();
     }
 
     $self->dbh->{AutoCommit} = 0;
@@ -74,11 +75,11 @@ sub run {
     }
 
     my $rows = $self->dbh->commit;
-    die "Could't run migrations" if $rows < 0;
+    die red("Could't run migrations") if $rows < 0;
 
     $self->dbh->{AutoCommit} = 1;
 
-    say "Run migrations:$completed complete";
+    say green("Run migrations:$completed complete");
 
     return 1;
 }
@@ -87,7 +88,7 @@ sub rollback {
     my ($self, $num) = @_;
 
     unless ($self->_is_applied_migrations_table_exists() ) {
-        die "Table applied_migrations does not exists. You should run init first";
+        die $self->_applied_migrations_not_exist_phrase();
     }
 
     $self->dbh->{AutoCommit} = 0;
@@ -108,11 +109,11 @@ sub rollback {
     }
 
     my $rows = $self->dbh->commit;
-    die "Could't rollback migrations" if $rows < 0;
+    die red("Could't rollback migrations") if $rows < 0;
 
     $self->dbh->{AutoCommit} = 1;
 
-    say "Rollback migrations:$completed complete";
+    say green("Rollback migrations:$completed complete");
 
     return 1;
 }
@@ -126,6 +127,10 @@ sub _is_applied_migrations_table_exists {
     return @row ? 1 : 0;
 }
 
+sub _applied_migrations_not_exist_phrase {
+    return red("Table applied_migrations does not exists. You should run init first");
+}
+
 sub _detect_dir {
     my ($self) = @_;
 
@@ -133,13 +138,13 @@ sub _detect_dir {
     return $ENV{PWD}.$self->dir     if -d $ENV{PWD}.$self->dir;
     return $ENV{PWD}.'/'.$self->dir if -d $ENV{PWD}.'/'.$self->dir;
 
-    die "$self->{dir} doesn't exists";
+    die red("$self->{dir} doesn't exists");
 }
 
 sub _dir_listing {
     my ($self, $dir) = @_;
 
-    opendir my $dh, $dir or die "Couldn't open dir '$dir': $!";
+    opendir my $dh, $dir or die red("Couldn't open dir '$dir': $!");
     my @dirs = readdir $dh;
     closedir $dh;
 
