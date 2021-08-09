@@ -38,30 +38,31 @@ sub init {
     my @sql = <DATA>;
     my $sql = join '', @sql;
 
-    my $sth = $self->dbh->table_info('%', '%', 'applied_migrations', 'TABLE');
-    my @row = $sth->fetchrow_array;
-
-    unless (@row) {
+    if ($self->_is_applied_migrations_table_exists() ) {
+        say "Table applied_migrations already exists";
+        return 1;
+    } else {
         $self->dbh->do($sql) or die $self->dbh->errstr;
 
         say "Table applied_migrations successfully created";
         return 1;
     }
-
-    say "Table applied_migrations already exists";
-    return 1;
 }
 
 sub run {
     my ($self, $num) = @_;
 
-    $num = $num || 1;
-    my $completed = 0;
+    unless ($self->_is_applied_migrations_table_exists() ) {
+        die "Table applied_migrations does not exists. You should run init first";
+    }
 
     $self->dbh->{AutoCommit} = 0;
 
     my $dir  = $self->_detect_dir; 
     my @dirs = sort $self->_dir_listing($dir);
+
+    $num = $num || @dirs;
+    my $completed = 0;
 
     for (@dirs) {
         last unless $num;
@@ -85,13 +86,17 @@ sub run {
 sub rollback {
     my ($self, $num) = @_;
 
-    $num = $num || 1;
-    my $completed = 0;
+    unless ($self->_is_applied_migrations_table_exists() ) {
+        die "Table applied_migrations does not exists. You should run init first";
+    }
 
     $self->dbh->{AutoCommit} = 0;
 
     my $dir  = $self->_detect_dir; 
     my @dirs = sort { $b cmp $a } $self->_dir_listing($dir);
+
+    $num = $num || @dirs;
+    my $completed = 0;
 
     for (@dirs) {
         last unless $num;
@@ -110,6 +115,15 @@ sub rollback {
     say "Rollback migrations:$completed complete";
 
     return 1;
+}
+
+sub _is_applied_migrations_table_exists {
+    my ($self) = @_;
+
+    my $sth = $self->dbh->table_info('%', '%', 'applied_migrations', 'TABLE');
+    my @row = $sth->fetchrow_array;
+
+    return @row ? 1 : 0;
 }
 
 sub _detect_dir {
