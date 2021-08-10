@@ -126,6 +126,8 @@ sub _is_applied_migrations_table_exists {
 
     my $sth = $self->dbh->table_info('%', '%', 'applied_migrations', 'TABLE');
     my @row = $sth->fetchrow_array;
+   
+    $sth->finish;
 
     return @row ? 1 : 0;
 }
@@ -162,6 +164,8 @@ sub _is_migration_applied {
     my $sql = 'SELECT migration FROM applied_migrations WHERE migration = ?';
     my $sth = $self->dbh->prepare($sql) or say colored($self->dbh->errstr, 'red') and exit;
     my $rv  = $sth->execute($migration);
+    
+    $sth->finish;
 
     say colored($sth->errstr) and exit if $rv < 0;
     
@@ -193,6 +197,8 @@ sub _save_migration {
     my $sql = 'INSERT INTO applied_migrations VALUES(?)';
     my $sth = $self->dbh->prepare($sql) or say colored($self->dbh->errstr, 'red') and exit;
     my $rv  = $sth->execute($migration);
+    
+    $sth->finish;
 
     return $rv ne '0E0';
 }
@@ -203,6 +209,8 @@ sub _delete_migration {
     my $sql = 'DELETE FROM applied_migrations WHERE migration = ?';
     my $sth = $self->dbh->prepare($sql) or say colored($self->dbh->errstr, 'red') and exit;
     my $rv  = $sth->execute($migration);
+   
+    $sth->finish;
 
     return $rv ne '0E0';
 }
