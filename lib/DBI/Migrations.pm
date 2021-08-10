@@ -217,9 +217,11 @@ sub _delete_migration {
     return $rv ne '0E0';
 }
 
-__PACKAGE__
+1;
 
 __DATA__
 CREATE TABLE applied_migrations (
     migration TEXT
 );
+
+__END__

@@ -4,4 +4,4 @@ color    = 1
 theme    = (pbp + security) * bugs 
 
 include  = BuiltinFunctions layout ControlStructures Modules Subroutines Variables Community
-exclude  = ProhibitPostfixControls ProhibitUnlessBlocks ProhibitReverseSortBlock ProhibitPunctuationVars RequireEndWithOne RequireTidyCode
+exclude  = ProhibitPostfixControls ProhibitUnlessBlocks ProhibitReverseSortBlock ProhibitPunctuationVars RequireTidyCode
