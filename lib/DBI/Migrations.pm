@@ -14,8 +14,6 @@ use File::Slurper 'read_text';
 use File::Basename;
 use Scalar::Util 'blessed';
 
-use Data::Dumper;
-
 use constant {
     UP   => 'up',
     DOWN => 'down',
