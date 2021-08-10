@@ -1,0 +1,4 @@
+severity = 5
+verbose  = %f: [%p] %m at line %l, column %c.\n
+color    = 1   
+theme    = pbp
