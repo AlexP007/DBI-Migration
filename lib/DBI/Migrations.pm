@@ -14,6 +14,8 @@ use File::Slurper 'read_text';
 use File::Basename;
 use Scalar::Util 'blessed';
 
+use Data::Dumper;
+
 use constant {
     UP   => 'up',
     DOWN => 'down',
@@ -164,12 +166,13 @@ sub _is_migration_applied {
     my $sql = 'SELECT migration FROM applied_migrations WHERE migration = ?';
     my $sth = $self->dbh->prepare($sql) or say colored($self->dbh->errstr, 'red') and exit;
     my $rv  = $sth->execute($migration);
+    my @row = $sth->fetchrow_array;
     
     $sth->finish;
 
     say colored($sth->errstr) and exit if $rv < 0;
     
-    return $sth->fetchrow_array;
+    return @row;
 }
 
 sub _run_migration {
