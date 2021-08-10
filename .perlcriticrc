@@ -1,4 +1,7 @@
 severity = 5
 verbose  = %f: [%p] %m at line %l, column %c.\n
 color    = 1   
-theme    = pbp
+theme    = (pbp + security) * bugs 
+
+include  = BuiltinFunctions layout ControlStructures Modules Subroutines Variables Community
+exclude  = ProhibitPostfixControls ProhibitUnlessBlocks ProhibitReverseSortBlock ProhibitPunctuationVars RequireEndWithOne RequireTidyCode

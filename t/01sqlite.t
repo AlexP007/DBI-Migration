@@ -11,7 +11,7 @@ use Test::Simple tests => 3;
 
 # Use an in-memory test db.
 my $sqlite = Test::SQLite->new(
-    memory => 1, 
+    memory => 1,
     db_attrs => { RaiseError => 1, AutoCommit => 1 },
 );
 

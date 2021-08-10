@@ -2,8 +2,7 @@ package DBI::Migrations;
 
 use 5.24.0;
 
-use strict;
-use warnings;
+
 use feature 'say';
 
 use Exporter 'import';
@@ -43,7 +42,9 @@ sub init {
     if ($self->_is_applied_migrations_table_exists() ) {
         say colored("Table applied_migrations already exists", 'yellow');
         return 1;
-    } else {
+    }
+
+    else {
         $self->dbh->do($sql) or say colored($self->dbh->errstr, 'red') and exit;
 
         say colored("Table applied_migrations successfully created", 'green');
@@ -61,7 +62,7 @@ sub run {
 
     $self->dbh->{AutoCommit} = 0;
 
-    my $dir  = $self->_detect_dir; 
+    my $dir  = $self->_detect_dir;
     my @dirs = sort $self->_dir_listing($dir);
 
     $num = $num || @dirs;
@@ -96,7 +97,7 @@ sub rollback {
 
     $self->dbh->{AutoCommit} = 0;
 
-    my $dir  = $self->_detect_dir; 
+    my $dir  = $self->_detect_dir;
     my @dirs = sort { $b cmp $a } $self->_dir_listing($dir);
 
     $num = $num || @dirs;
@@ -126,7 +127,7 @@ sub _is_applied_migrations_table_exists {
 
     my $sth = $self->dbh->table_info('%', '%', 'applied_migrations', 'TABLE');
     my @row = $sth->fetchrow_array;
-   
+
     $sth->finish;
 
     return @row ? 1 : 0;
@@ -155,7 +156,7 @@ sub _dir_listing {
     my @dirs = readdir $dh;
     closedir $dh;
 
-    return grep !/^\.|\.\.$/, @dirs;
+    return grep {!/^\.|\.\.$/} @dirs;
 }
 
 sub _is_migration_applied {
@@ -165,11 +166,11 @@ sub _is_migration_applied {
     my $sth = $self->dbh->prepare($sql) or say colored($self->dbh->errstr, 'red') and exit;
     my $rv  = $sth->execute($migration);
     my @row = $sth->fetchrow_array;
-    
+
     $sth->finish;
 
     say colored($sth->errstr) and exit if $rv < 0;
-    
+
     return @row;
 }
 
@@ -178,7 +179,7 @@ sub _run_migration {
 
     my $filename = "${migration}_$type.sql";
     my $sql      = read_text "$dir/$migration/$filename";
-    my $rows     = $self->dbh->do($sql); 
+    my $rows     = $self->dbh->do($sql);
 
     say colored($self->db->errstr, 'red') and exit if $rows < 0;
 
@@ -198,7 +199,7 @@ sub _save_migration {
     my $sql = 'INSERT INTO applied_migrations VALUES(?)';
     my $sth = $self->dbh->prepare($sql) or say colored($self->dbh->errstr, 'red') and exit;
     my $rv  = $sth->execute($migration);
-    
+
     $sth->finish;
 
     return $rv ne '0E0';
@@ -210,7 +211,7 @@ sub _delete_migration {
     my $sql = 'DELETE FROM applied_migrations WHERE migration = ?';
     my $sth = $self->dbh->prepare($sql) or say colored($self->dbh->errstr, 'red') and exit;
     my $rv  = $sth->execute($migration);
-   
+
     $sth->finish;
 
     return $rv ne '0E0';
