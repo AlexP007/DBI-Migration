@@ -11,6 +11,7 @@ use Exporter 'import';
 use Moo;
 use Term::ANSIColor 'colored';
 use File::Slurper 'read_text';
+use File::Basename;
 use Scalar::Util 'blessed';
 
 use constant {
@@ -136,11 +137,12 @@ sub _applied_migrations_not_exist_phrase {
 sub _detect_dir {
     my ($self) = @_;
 
-    return $self->dir               if -d $self->dir;
-    return $ENV{PWD}.$self->dir     if -d $ENV{PWD}.$self->dir;
-    return $ENV{PWD}.'/'.$self->dir if -d $ENV{PWD}.'/'.$self->dir;
+    return $self->dir                               if -d $self->dir;
+    return $ENV{PWD}.$self->dir                     if -d $ENV{PWD}.$self->dir;
+    return $ENV{PWD}.'/'.$self->dir                 if -d $ENV{PWD}.'/'.$self->dir;
+    return $ENV{PWD}.'/'.dirname($0).'/'.$self->dir if -d $ENV{PWD}.'/'.dirname($0).'/'.$self->dir;
 
-    say colored("$self->{dir} doesn't exists", 'red');
+    say colored("Dir $self->{dir} does not exists, try to specify full path", 'red');
     exit;
 }
 
