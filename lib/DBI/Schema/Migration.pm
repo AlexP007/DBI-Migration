@@ -142,7 +142,7 @@ sub down {
 
     $self->dbh->{AutoCommit} = 1;
 
-    say colored( "Migration down:$completed complete", 'green' );
+    say colored( "Migration down:$completed", 'green' );
 
     return 1;
 }
@@ -280,7 +280,7 @@ CREATE TABLE applied_migrations (
 
 __END__
 
-# ABSTRACT: Simple sql migrations for database versioning.
+# ABSTRACT: An easy way to start using migrations.
 
 =pod
 
@@ -288,7 +288,7 @@ __END__
 
 =head1 NAME
 
-DBI::Schema::Migration - Simple I<sql> migrations for database versioning.
+DBI::Schema::Migration - An easy way to start using migrations.
 
 =head1 VERSION
 
@@ -296,24 +296,84 @@ version 1.00
 
 =head1 SYNOPSIS
 
-    DBI::Migrations
+    use DBI; # it is assumed that you are using DBI to handle your database connections
+    use DBI::Schema::Migration;
 
+    my $driver   = "SQLite"; # just example, you can use mysql, postgres e.t.c
+    my $database = "test.db";
+    my $dsn      = "DBI:$driver:dbname=$database";
+    my $userid   = "";
+    my $password = "";
+    my $dbh =
+        DBI->connect($dsn, $userid, $password, { RaiseError => 1 }) 
+        or die $DBI::errstr;
+
+    $migration = DBI::Schema::Migration->new( {
+        dbh => $dbh, # connection handler
+        dir => 'db/migrations', # path to directory with migrations
+    } );
+
+    $migration->init(); # create applied_migrations table
+
+    $migration->up(1);   # run 1 migration
+    $migration->up();    # run all migrations
+
+    $migration->down(1); # rollback 1 migration
+    $migration->down();  # rollback all migrations
 
 =head1 DESCRIPTION
+
+Schema migration is a tool that helps to apply incremental and reversible changes to you relational database.
+You could build cli util or use this class whintin yor ci/cd script.
+This module relies on DBI and the database connection it creates.
+It only works with migrations written in sql.
+
+Migration in terms of this module is a directory consisting of two files:
+    1 *_up.sql   - apply changes
+    2 *_down.sql - reverse changes
+
+Example:
+    migrations/
+   |
+   |-- 01_create_table_users/
+   |     \
+   |      \-- 01_create_table_users_up.sql
+   |      |
+   |      |-- 01_create_table_users_down.sql
+   |
+   |-- 02_add_users/
+   |     \
+   |      \-- 02_add_users_up.sql
+   |      |
+   |      |-- 02_add_users_down.sql
+
+As you can see, there are some naming conventions:
+    1 Migrations starts with a number that determines the order 
+    2 Migrations ends with up.sql or down.sql 
+
+Once a migration has been applied, it is stored in the database, and
+the migration will not be applied again, until your reverse it with
+down method.  
 
 =head2 CONFIGURATION
 
 =over 4
 
-=item I<Structs> or I<structures> is arrays, hashes or objects.
+=item I<dbh> - database handler 
 
-=item I<Dot notation> is a string containing the keys of nested structures separated by a dot: ".". Looks like "person.1.name", where "1" could be an array index or hash/object key.
+=item I<dir> - path to migrations directory, full or relative
 
 =back
 
 =head2 METHODS
 
 =head3 up($num)
+
+Will apply $num migrations or all of them if $num is not specified.
+
+=head3 down($num)
+
+Will reverse $num migrations or all of them if $num is not specified.
 
 =head1 BUGS
 
@@ -325,7 +385,7 @@ https://github.com/AlexP007/DBI-Migration - fork or add pr.
 
 =head1 AUTHOR
 
-Alexander Panteleev <alexpan at cpan dot org>
+Alexander Panteleev <alexpan at cpan dot org>.
 
 =head1 COPYRIGHT AND LICENSE
 
