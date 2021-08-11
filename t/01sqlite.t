@@ -7,7 +7,7 @@ use DBI;
 use DBI::Schema::Migration;
 use Test::SQLite;
 
-use Test::Simple tests => 3;
+use Test::Simple tests => 4;
 
 # Use an in-memory test db.
 my $sqlite = Test::SQLite->new(
@@ -47,9 +47,20 @@ $sth->finish;
 ok( $row->{surname} eq 'Mashkova', 'User Jane Mashkova does not exists' );
 
 # TEST 3
-# Testing migrations rollback.
-# Will fetch table user info.
-$migrations->down;
+# Testing migrations rollback by 1.
+# Will fetch table user info and it should be there.
+$migrations->down(1);
+$sth = $dbh->table_info( '%', '%', 'users', 'TABLE' );
+@row = $sth->fetchrow_array;
+
+$sth->finish;
+
+ok(@row, 'Table users does not exists' );
+
+# TEST 4
+# Testing migrations rollback by 1.
+# Will fetch table user info and no table should be.
+$migrations->down(1);
 $sth = $dbh->table_info( '%', '%', 'users', 'TABLE' );
 @row = $sth->fetchrow_array;
 
