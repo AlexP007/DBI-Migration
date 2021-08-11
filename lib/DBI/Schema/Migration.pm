@@ -26,7 +26,7 @@ has dbh => (
     is       => 'ro',
     requires => 1,
     isa      => sub {
-        if (    not blessed $_[0]
+        if ( not blessed $_[0]
             and not $_[0]->isa('DBI::db') )
         {
             say colored( "$_[0] is not DBI::db", 'red' );
@@ -56,8 +56,10 @@ sub init {
             or say colored( $self->dbh->errstr, 'red' )
             and exit;
 
-        say colored( 'Table applied_migrations successfully created',
-            'green' );
+        say colored(
+            'Table applied_migrations successfully created',
+            'green'
+        );
 
         return 1;
     }
@@ -180,8 +182,10 @@ sub _detect_dir {
         }
     }
 
-    say colored( "Dir $self->{dir} does not exists, try to specify full path",
-        'red' );
+    say colored(
+        "Dir $self->{dir} does not exists, try to specify full path",
+        'red'
+    );
     exit;
 }
 

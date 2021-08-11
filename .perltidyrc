@@ -10,5 +10,6 @@
 -bbt=1  # Medium block brace tightness
 -nsfs   # No space before semicolons
 -nolq   # Don't outdent long quoted strings
+-fnl    # Freeze newlines
 
 -wbb="% + - * / x != == >= <= =~ < > | & **= += *= &= <<= &&= -= /= |= >>= ||= .= %= ^= x="
