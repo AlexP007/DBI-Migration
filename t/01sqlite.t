@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use DBI;
-use DBI::Migrations;
+use DBI::Schema::Migration;
 use Test::SQLite;
 
 use Test::Simple tests => 3;
@@ -17,10 +17,9 @@ my $sqlite = Test::SQLite->new(
 
 my $dbh = $sqlite->dbh;
 
-my $migrations = DBI::Migrations->new({
+my $migrations = DBI::Schema::Migration->new({
     dbh  => $dbh,
     dir  => 'migrations',
-    name => 'test.db',
 });
 
 # TEST 1

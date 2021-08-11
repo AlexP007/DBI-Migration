@@ -1,4 +1,4 @@
-package DBI::Migrations;
+package DBI::Schema::Migration;
 
 use strict;
 use warnings;
@@ -32,7 +32,7 @@ has dbh => (
     },
 );
 
-has [qw(dir name)] => (
+has dir => (
     is       => 'ro',
     required => 1,
 );
@@ -99,7 +99,7 @@ sub up {
 
     $self->dbh->{AutoCommit} = 1;
 
-    say colored("Run migrations:$completed complete", 'green');
+    say colored("Migration up:$completed", 'green');
 
     return 1;
 }
@@ -140,7 +140,7 @@ sub down {
 
     $self->dbh->{AutoCommit} = 1;
 
-    say colored("Rollback migrations:$completed complete", 'green');
+    say colored("Migration down:$completed complete", 'green');
 
     return 1;
 }
@@ -271,7 +271,7 @@ __END__
 
 =head1 NAME
 
-DBI::Migrations - Simple I<sql> migrations for database versioning.
+DBI::Schema::Migration - Simple I<sql> migrations for database versioning.
 
 =head1 VERSION
 
