@@ -25,7 +25,7 @@ my $migrations = DBI::Migrations->new({
 
 # TEST 1
 # Testing applied_migration table creation.
-$migrations->init();
+$migrations->init;
 
 my $sth = $dbh->table_info('%', '%', 'applied_migrations', 'TABLE');
 my @row = $sth->fetchrow_array;
@@ -37,7 +37,7 @@ ok(@row, 'Table applied_migrations does not exists');
 # TEST 2
 # Testing migrations run.
 # We will try to fetch data, which was populated.
-$migrations->run();
+$migrations->up;
 
 $sth = $dbh->prepare('SELECT * FROM users WHERE name = ?');
 $sth->execute('Jane');
@@ -50,7 +50,7 @@ ok($row->{surname} eq 'Mashkova', 'User Jane Mashkova does not exists');
 # TEST 3
 # Testing migrations rollback.
 # Will fetch table user info.
-$migrations->rollback();
+$migrations->down;
 $sth = $dbh->table_info('%', '%', 'users', 'TABLE');
 @row = $sth->fetchrow_array;
 

@@ -1,10 +1,11 @@
 package DBI::Migrations;
 
+use strict;
+use warnings;
+
 use 5.24.0;
-
-
 use feature 'say';
-
+use English;
 use Exporter 'import';
 
 use Moo;
@@ -24,7 +25,10 @@ has dbh => (
     is       => 'ro',
     requires => 1,
     isa      => sub {
-        say colored("$_[0] is not DBI::db", 'red') and exit unless blessed $_[0] and $_[0]->isa('DBI::db');
+        if (not (blessed $_[0] and $_[0]->isa('DBI::db')) ) {
+            say colored("$_[0] is not DBI::db", 'red'); 
+            exit;
+        }
     },
 );
 
@@ -40,22 +44,29 @@ sub init {
     my $sql = join '', @sql;
 
     if ($self->_is_applied_migrations_table_exists() ) {
-        say colored("Table applied_migrations already exists", 'yellow');
+        say colored('Table applied_migrations already exists', 'yellow');
         return 1;
     }
 
     else {
-        $self->dbh->do($sql) or say colored($self->dbh->errstr, 'red') and exit;
+        my $rows = $self->dbh->do($sql);
 
-        say colored("Table applied_migrations successfully created", 'green');
-        return 1;
+        if (!$rows) {
+            say colored($self->dbh->errstr, 'red');
+            exit;
+        }
+
+        else {
+            say colored('Table applied_migrations successfully created', 'green');
+            return 1;
+        }
     }
 }
 
-sub run {
+sub up {
     my ($self, $num) = @_;
 
-    unless ($self->_is_applied_migrations_table_exists() ) {
+    if (not $self->_is_applied_migrations_table_exists() ) {
         say $self->_applied_migrations_not_exist_phrase();
         exit;
     }
@@ -69,8 +80,11 @@ sub run {
     my $completed = 0;
 
     for (@dirs) {
-        last unless $num;
-        unless ($self->_is_migration_applied($_) ) {
+        if (not $num) {
+            last;
+        }
+        
+        elsif (not $self->_is_migration_applied($_) ) {
             $self->_run_migration($dir, $_, UP);
             $completed++;
             $num--;
@@ -78,7 +92,10 @@ sub run {
     }
 
     my $rows = $self->dbh->commit;
-    say colored("Could't run migrations", 'red') and exit if $rows < 0;
+
+    if ($rows < 0) {
+        say colored('Could not run migrations', 'red') and exit;
+    }
 
     $self->dbh->{AutoCommit} = 1;
 
@@ -87,10 +104,10 @@ sub run {
     return 1;
 }
 
-sub rollback {
+sub down {
     my ($self, $num) = @_;
 
-    unless ($self->_is_applied_migrations_table_exists() ) {
+    if (not $self->_is_applied_migrations_table_exists() ) {
         say $self->_applied_migrations_not_exist_phrase();
         exit;
     }
@@ -104,8 +121,11 @@ sub rollback {
     my $completed = 0;
 
     for (@dirs) {
-        last unless $num;
-        if ($self->_is_migration_applied($_) ) {
+        if (not $num) {
+            last;
+        }
+        
+        elsif ($self->_is_migration_applied($_) ) {
             $self->_run_migration($dir, $_, DOWN);
             $completed++;
             $num--;
@@ -113,7 +133,10 @@ sub rollback {
     }
 
     my $rows = $self->dbh->commit;
-    say colored("Could't rollback migrations", 'red') and exit if $rows < 0;
+    if ($rows < 0) {
+        say colored('Could not rollback migrations', 'red');
+        exit;
+    } 
 
     $self->dbh->{AutoCommit} = 1;
 
@@ -134,16 +157,24 @@ sub _is_applied_migrations_table_exists {
 }
 
 sub _applied_migrations_not_exist_phrase {
-    return colored("Table applied_migrations does not exists. You should run init first", 'red');
+    return colored('Table applied_migrations does not exists. You should run init first', 'red');
 }
 
 sub _detect_dir {
     my ($self) = @_;
 
-    return $self->dir                               if -d $self->dir;
-    return $ENV{PWD}.$self->dir                     if -d $ENV{PWD}.$self->dir;
-    return $ENV{PWD}.'/'.$self->dir                 if -d $ENV{PWD}.'/'.$self->dir;
-    return $ENV{PWD}.'/'.dirname($0).'/'.$self->dir if -d $ENV{PWD}.'/'.dirname($0).'/'.$self->dir;
+    my @dirs = (
+        $self->dir,
+        $ENV{PWD}.$self->dir,
+        $ENV{PWD}.'/'.$self->dir,
+        $ENV{PWD}.'/'.dirname($PROGRAM_NAME).'/'.$self->dir,
+    );
+
+    for (@dirs) {
+        if (-d $_) {
+            return $_;
+        }
+    }
 
     say colored("Dir $self->{dir} does not exists, try to specify full path", 'red');
     exit;
@@ -152,11 +183,11 @@ sub _detect_dir {
 sub _dir_listing {
     my ($self, $dir) = @_;
 
-    opendir my $dh, $dir or say colored("Couldn't open dir '$dir': $!", 'red') and exit;
+    opendir my $dh, $dir or say colored("Couldn't open dir '$dir': $ERRNO", 'red') and exit;
     my @dirs = readdir $dh;
     closedir $dh;
 
-    return grep {!/^\.|\.\.$/} @dirs;
+    return grep { !/^\.|\.{2}$/m } @dirs;
 }
 
 sub _is_migration_applied {
@@ -169,7 +200,10 @@ sub _is_migration_applied {
 
     $sth->finish;
 
-    say colored($sth->errstr) and exit if $rv < 0;
+    if ($rv < 0) {
+        say colored($sth->errstr);
+        exit;
+    }
 
     return @row;
 }
@@ -181,7 +215,10 @@ sub _run_migration {
     my $sql      = read_text "$dir/$migration/$filename";
     my $rows     = $self->dbh->do($sql);
 
-    say colored($self->db->errstr, 'red') and exit if $rows < 0;
+    if ($rows < 0) {
+        say colored($self->db->errstr, 'red');
+        exit;
+    }
 
     if ($type eq UP) {
         $self->_save_migration($migration);
@@ -225,3 +262,59 @@ CREATE TABLE applied_migrations (
 );
 
 __END__
+
+# ABSTRACT: Simple sql migrations for database versioning.
+
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+DBI::Migrations - Simple I<sql> migrations for database versioning.
+
+=head1 VERSION
+
+version 1.00
+
+=head1 SYNOPSIS
+
+    DBI::Migrations
+
+
+=head1 DESCRIPTION
+
+=head2 CONFIGURATION
+
+=over 4
+
+=item I<Structs> or I<structures> is arrays, hashes or objects.
+
+=item I<Dot notation> is a string containing the keys of nested structures separated by a dot: ".". Looks like "person.1.name", where "1" could be an array index or hash/object key.
+
+=back
+
+=head2 METHODS
+
+=head3 up($num)
+
+=head1 BUGS
+
+If you find one, please let me know.
+
+=head1 SOURCE CODE REPOSITORY
+
+https://github.com/AlexP007/DBI-Migration - fork or add pr.
+
+=head1 AUTHOR
+
+Alexander Panteleev <alexpan at cpan dot org>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2021 by Alexander Panteleev.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut

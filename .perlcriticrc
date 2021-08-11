@@ -1,7 +1,13 @@
-severity = 5
+severity = 1
 verbose  = %f: [%p] %m at line %l, column %c.\n
 color    = 1   
-theme    = (pbp + security) * bugs 
+theme    = freenode + pbp + bugs
 
-include  = BuiltinFunctions layout ControlStructures Modules Subroutines Variables Community
-exclude  = ProhibitPostfixControls ProhibitUnlessBlocks ProhibitReverseSortBlock ProhibitPunctuationVars RequireTidyCode
+[-Perl::Critic::Policy::ValuesAndExpressions::ProhibitVersionStrings]
+[-Perl::Critic::Policy::ValuesAndExpressions::ProhibitEmptyQuotes]
+[-ValuesAndExpressions::ProhibitConstantPragma]
+[-BuiltinFunctions::ProhibitReverseSortBlock]
+[-ValuesAndExpressions::ProhibitNoisyQuotes]
+[-RegularExpressions::ProhibitEscapedMetacharacters]
+[-RegularExpressions::RequireDotMatchAnything]
+[-RegularExpressions::RequireExtendedFormatting]
