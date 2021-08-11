@@ -5,4 +5,4 @@
 .build
 db_test.pl
 test.db
-DBI-Schema-*
+DBIx-Schema-*

@@ -1,4 +1,4 @@
-package DBI::Schema::Migration;
+package DBIx::Schema::Migration;
 
 use 5.24.0;
 
@@ -288,7 +288,7 @@ __END__
 
 =head1 NAME
 
-DBI::Schema::Migration - An easy way to start using migrations.
+DBIx::Schema::Migration - An easy way to start using migrations.
 
 =head1 VERSION
 
@@ -297,7 +297,7 @@ version 1.00
 =head1 SYNOPSIS
 
     use DBI; # it is assumed that you are using DBI to handle your database connections
-    use DBI::Schema::Migration;
+    use DBIx::Schema::Migration;
 
     my $driver   = "SQLite"; # just example, you can use mysql, postgres e.t.c
     my $database = "test.db";
@@ -308,7 +308,7 @@ version 1.00
         DBI->connect($dsn, $userid, $password, { RaiseError => 1 }) 
         or die $DBI::errstr;
 
-    $migration = DBI::Schema::Migration->new( {
+    $migration = DBIx::Schema::Migration->new( {
         dbh => $dbh, # connection handler
         dir => 'db/migrations', # path to directory with migrations
     } );
@@ -381,7 +381,7 @@ If you find one, please let me know.
 
 =head1 SOURCE CODE REPOSITORY
 
-https://github.com/AlexP007/DBI-Migration - fork or add pr.
+https://github.com/AlexP007/DBIx-Schema-Migration - fork or add pr.
 
 =head1 AUTHOR
 
