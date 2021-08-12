@@ -20,7 +20,7 @@ use constant {
     DOWN => 'down',
 };
 
-our $VERSION = '1.00';
+our $VERSION = '1.01';
 
 has dbh => (
     is       => 'ro',
@@ -286,7 +286,7 @@ DBIx::Schema::Migration - An easy way to start using migrations.
 
 =head1 VERSION
 
-version 1.00
+version 1.01
 
 =head1 SYNOPSIS
 
