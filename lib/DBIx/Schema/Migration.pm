@@ -43,8 +43,7 @@ has dir => (
 sub init {
     my ($self) = @_;
 
-    my @sql = <DATA>;
-    my $sql = join '', @sql;
+    my $sql = 'CREATE TABLE applied_migrations (migration TEXT);';
 
     if ( $self->_is_applied_migrations_table_exists() ) {
         say colored( 'Table applied_migrations already exists', 'yellow' );
@@ -273,11 +272,6 @@ sub _delete_migration {
 
 1;
 
-__DATA__
-CREATE TABLE applied_migrations (
-    migration TEXT
-);
-
 __END__
 
 # ABSTRACT: An easy way to start using migrations.
@@ -359,6 +353,41 @@ Once a migration has been applied, it is stored in the database, and
 the migration will not be applied again, until your reverse it with
 down method.  
 
+=head2 DANCER2
+
+The main idea behind this module is the creation of simple commands 
+for the cli, as well as easy integration with large applications.
+
+It can be used with dancer easily, just create migration.pl in your
+app root and put this code inside:
+
+    use Dancer2;
+    use Dancer2::Plugin::Database;
+    use DBIx::Schema::Migration;
+
+    my $dir = config->{migrations}->{directory};
+
+    # Instantinating Migration object.
+    my $migration = DBIx::Schema::Migration->new( {
+        dbh => database,
+        dir => $dir,
+    } );
+
+    # CLI logic.
+    my ($action, $num) = @ARGV;
+
+    SWITCH: for ($action) { 
+        if (/up/)   { $migration->up($num);   last SWITCH; }
+        if (/down/) { $migration->down($num); last SWITCH; }
+        if (/init/) { $migration->init();     last SWITCH; }
+    }
+
+Now you can run migrations simply:
+
+    perl migration.pl up
+    perl migration.pl down
+    perl migration.pl init
+
 =head2 CONFIGURATION
 
 =over 4
@@ -383,7 +412,7 @@ Will apply $num migrations or all of them if $num is not specified.
 
 Will reverse $num migrations or all of them if $num is not specified.
 
-=head1 BUGS
+=head1 BUGS AND LIMITATIONS
 
 If you find one, please let me know.
 
@@ -395,7 +424,7 @@ https://github.com/AlexP007/DBIx-Schema-Migration - fork or add pr.
 
 Alexander Panteleev <alexpan at cpan dot org>.
 
-=head1 COPYRIGHT AND LICENSE
+=head1 LICENSE AND COPYRIGHT
 
 This software is copyright (c) 2021 by Alexander Panteleev.
 
