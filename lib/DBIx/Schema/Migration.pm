@@ -304,6 +304,7 @@ version 1.00
     my $dsn      = "DBI:$driver:dbname=$database";
     my $userid   = "";
     my $password = "";
+
     my $dbh =
         DBI->connect($dsn, $userid, $password, { RaiseError => 1 }) 
         or die $DBI::errstr;
@@ -329,11 +330,13 @@ This module relies on DBI and the database connection it creates.
 It only works with migrations written in sql.
 
 Migration in terms of this module is a directory consisting of two files:
+
     1 *_up.sql   - apply changes
     2 *_down.sql - reverse changes
 
 Example:
-    migrations/
+
+    db/migrations/
    |
    |-- 01_create_table_users/
    |     \
@@ -348,6 +351,7 @@ Example:
    |      |-- 02_add_users_down.sql
 
 As you can see, there are some naming conventions:
+
     1 Migrations starts with a number that determines the order 
     2 Migrations ends with up.sql or down.sql 
 
@@ -359,9 +363,13 @@ down method.
 
 =over 4
 
-=item I<dbh> - database handler 
+=item dbh
 
-=item I<dir> - path to migrations directory, full or relative
+Database handler.
+
+=item dir 
+
+Path to migrations directory, full or relative.
 
 =back
 
